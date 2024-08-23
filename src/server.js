@@ -1,31 +1,21 @@
-import { randomUUID } from "node:crypto";
 import http from "node:http";
+import { jsonParser } from "./middlewares/jsonParser.js";
+import { routes } from "./routes.js";
 
-const database = [];
-
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
 	const { method, url } = req;
-	console.log(method, url);
 
-	if (method === "GET" && url === "/tasks") {
-		return res
-			.setHeader("Content-type", "application/json")
-			.end(JSON.stringify(database));
+	await jsonParser(req, res);
+
+	const route = routes.find((route) => {
+		return route.method === method && route.path === url;
+	});
+
+	if (route) {
+		return route.handler(req, res);
 	}
 
-	if (method === "POST" && url === "/tasks") {
-		database.push({
-			id: randomUUID(),
-			title: "title test",
-			description: "description test",
-			completed_at: null,
-			created_at: "2024-08-22",
-			updated_at: "2024-08-22",
-		});
-		return res.end("Task criada com sucesso.");
-	}
-
-	res.end("Hello world");
+	return res.writeHead(404).end();
 });
 
 server.listen(3000);
