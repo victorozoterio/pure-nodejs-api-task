@@ -37,6 +37,23 @@ export class Database {
 		return data;
 	}
 
+	update(table, id, data) {
+		const rowIndex = this.#database[table].findIndex((row) => row.id === id);
+
+		if (rowIndex > -1) {
+			const existingData = this.#database[table][rowIndex];
+			this.#database[table][rowIndex] = {
+				...existingData,
+				...data,
+			};
+			this.#persist();
+		} else {
+			throw new Error("404: Not Found");
+		}
+
+		return this.#database[table][rowIndex];
+	}
+
 	delete(table, id) {
 		const rowIndex = this.#database[table].findIndex((row) => row.id === id);
 
