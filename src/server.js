@@ -1,5 +1,5 @@
 import http from "node:http";
-import { jsonParser } from "./middlewares/jsonParser.js";
+import { jsonParser } from "./middlewares/json-parser.js";
 import { routes } from "./routes.js";
 
 const server = http.createServer(async (req, res) => {
@@ -8,10 +8,13 @@ const server = http.createServer(async (req, res) => {
 	await jsonParser(req, res);
 
 	const route = routes.find((route) => {
-		return route.method === method && route.path === url;
+		return route.method === method && route.path.test(url);
 	});
 
 	if (route) {
+		const routeParams = req.url.match(route.path);
+		console.log(routeParams);
+
 		return route.handler(req, res);
 	}
 
