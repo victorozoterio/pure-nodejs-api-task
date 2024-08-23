@@ -33,4 +33,23 @@ export const routes = [
 			return res.writeHead(201).end(JSON.stringify(task));
 		},
 	},
+
+	{
+		method: "DELETE",
+		path: buildRoutePath("/tasks/:id"),
+		handler: (req, res) => {
+			const { id } = req.params;
+
+			try {
+				database.delete("tasks", id);
+				return res.writeHead(204).end();
+			} catch (error) {
+				if (error.message === "404: Not Found") {
+					return res
+						.writeHead(404)
+						.end(JSON.stringify({ message: "Task does not exist." }));
+				}
+			}
+		},
+	},
 ];
