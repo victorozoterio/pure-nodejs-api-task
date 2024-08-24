@@ -1,16 +1,61 @@
+import multer from "multer";
+import csv from "csv-parser";
+import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import { Database } from "./database.js";
 import { buildRoutePath } from "./utils/build-route-path.js";
+
+const upload = multer({ dest: "./" });
 
 const database = new Database();
 
 export const routes = [
 	{
-		method: "GET",
-		path: buildRoutePath("/tasks"),
+		method: "POST",
+		path: buildRoutePath("/tasks/csv"),
 		handler: (req, res) => {
-			const tasks = database.select("tasks");
-			return res.end(JSON.stringify(tasks));
+			upload.single("file")(req, res, () => {
+				const file = req.file;
+
+				if (!file) {
+					return res
+						.writeHead(400)
+						.end(JSON.stringify({ message: "CSV file must be sent." }));
+				}
+
+				const tasks = [];
+
+				fs.createReadStream(file.path)
+					.pipe(csv({ headers: ["title", "description"], skipLines: 1 }))
+					.on("data", (row) => {
+						const { title, description } = row;
+
+						if (!title || !description) {
+							fs.unlinkSync(file.path);
+							return res.writeHead(400).end(
+								JSON.stringify({
+									message: "CSV must contain title and description.",
+								}),
+							);
+						}
+
+						const task = {
+							id: randomUUID(),
+							title,
+							description,
+							completed_at: null,
+							created_at: new Date(),
+							updated_at: new Date(),
+						};
+
+						tasks.push(task);
+						database.insert("tasks", task);
+					})
+					.on("end", () => {
+						fs.unlinkSync(file.path);
+						return res.writeHead(201).end(JSON.stringify(tasks));
+					});
+			});
 		},
 	},
 	{
@@ -39,6 +84,14 @@ export const routes = [
 			database.insert("tasks", task);
 
 			return res.writeHead(201).end(JSON.stringify(task));
+		},
+	},
+	{
+		method: "GET",
+		path: buildRoutePath("/tasks"),
+		handler: (req, res) => {
+			const tasks = database.select("tasks");
+			return res.end(JSON.stringify(tasks));
 		},
 	},
 	{

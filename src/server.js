@@ -5,7 +5,9 @@ import { routes } from "./routes.js";
 const server = http.createServer(async (req, res) => {
 	const { method, url } = req;
 
-	await jsonParser(req, res);
+	if (!url.includes("csv")) {
+		await jsonParser(req, res);
+	}
 
 	const route = routes.find((route) => {
 		return route.method === method && route.path.test(url);
