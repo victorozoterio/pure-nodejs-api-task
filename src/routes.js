@@ -133,6 +133,15 @@ export const routes = [
 			const { id } = req.params;
 
 			try {
+				const tasks = database.select("tasks");
+				const task = tasks.find((task) => task.id === id);
+
+				if (task.completed_at !== null) {
+					return res
+						.writeHead(400)
+						.end(JSON.stringify({ message: "Task is already completed." }));
+				}
+
 				const updatedTask = database.update("tasks", id, {
 					completed_at: new Date(),
 				});
