@@ -58,6 +58,27 @@ export const routes = [
 		},
 	},
 	{
+		method: "PATCH",
+		path: buildRoutePath("/tasks/:id/complete"),
+		handler: (req, res) => {
+			const { id } = req.params;
+
+			try {
+				const updatedTask = database.update("tasks", id, {
+					completed_at: new Date(),
+				});
+
+				return res.end(JSON.stringify(updatedTask));
+			} catch (error) {
+				if (error.message === "404: Not Found") {
+					return res
+						.writeHead(404)
+						.end(JSON.stringify({ message: "Task does not exist." }));
+				}
+			}
+		},
+	},
+	{
 		method: "DELETE",
 		path: buildRoutePath("/tasks/:id"),
 		handler: (req, res) => {
